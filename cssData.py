@@ -44,7 +44,7 @@ def relativeDensity():
     return Drs
 
 
-def to_dataframe(expNumList=expNumList(), data_dir=data_dir(), Drs=relativeDensity()):
+def to_dataframe(data_dir, expNumList=expNumList(), Drs=relativeDensity()):
     """make a list to contain dataframe for the whole data"""
 
     df_all = []  # make an empty list to contain dataframes
@@ -83,7 +83,7 @@ def to_dataframe(expNumList=expNumList(), data_dir=data_dir(), Drs=relativeDensi
     return df_all
 
 
-def plotTrial(expIndex, trialIndex, dataframe=to_dataframe()):
+def plotTrial(dataframe, expIndex, trialIndex):
     """plot all the columns in the dataframe at expIndex and trialIndex"""
 
     dataColNames = dataframe[expIndex][trialIndex].columns  # get data column names
@@ -97,7 +97,7 @@ def plotTrial(expIndex, trialIndex, dataframe=to_dataframe()):
         axi.set(ylabel=dataColNames[i])
 
 
-def LookIntoData(timeIndex, expNumList=expNumList(), dataframe=to_dataframe()):
+def LookIntoData(dataframe, timeIndex, expNumList=expNumList()):
     """
     Some of data has a irregular time interval and different data points.
     This function look into those.

@@ -14,13 +14,13 @@ expNumList1 = cssData.expNumList()  # get expNumList that you want to consider
 Drs = cssData.relativeDensity()  # get relative density (Dr) data for each trial
 
 # get dataframe for all trials
-df_all = cssData.to_dataframe(expNumList=expNumList1, data_dir=data_dir, Drs=Drs)
+df_all = cssData.to_dataframe(data_dir=data_dir, expNumList=expNumList1, Drs=Drs)
 
 # look into data
-cssData.LookIntoData(timeIndex=1000)
+cssData.LookIntoData(dataframe=df_all, timeIndex=1000)
 
 # plot trial
-cssData.plotTrial(expIndex=2, trialIndex=34)
+cssData.plotTrial(dataframe=df_all, expIndex=2, trialIndex=34)
 # %% reshape dataframe
 
 # see columns in the raw dataframe
@@ -147,54 +147,11 @@ inputData = plotResult.plot_dataset(
 
 #%% plot training and prediction result
 trainResult = plotResult.plot_predictionResult(
-    x_array_train=x_array_train, y_array_train=y_array_train, y_rnn_pred=y_rnn_train_pred,
+    x_array_sample=x_array_train, y_array_sample=y_array_train, y_rnn_pred=y_rnn_train_pred,
     time_steps=time_steps, window_length=length,
     title_index=train_trial_index)
 
 trainResult = plotResult.plot_predictionResult(
-    x_array_train=x_array_train, y_array_train=y_array_train, y_rnn_pred=y_rnn_test_pred,
+    x_array_sample=x_array_test, y_array_sample=y_array_test, y_rnn_pred=y_rnn_test_pred,
     time_steps=time_steps, window_length=length,
     title_index=test_trial_index)
-
-
-# %% Plot train result
-
-nc = 3  # num of columns in subplot
-
-# plot train result
-num_trials_train = len(x_array_train)  # total num of trials in train set
-nr = int(np.ceil(num_trials_train / nc))  # num of rows in subplot
-
-fig1, axs1 = plt.subplots(nrows=nr, ncols=nc, figsize=(nc * 5, nr * 3))
-axs_unroll = axs1.flatten()
-for i in range(num_trials_train):
-    axs_unroll[i].plot(x_array_train[i, :, 0],
-                       y_array_train[i, :, 0],
-                       c='goldenrod', label='train data')
-    axs_unroll[i].plot(x_array_train[i, length:time_steps, 0],
-                       y_rnn_train_pred[i * (time_steps - length):(i + 1) * (time_steps - length)],
-                       c='navy', label='train result')
-    axs_unroll[i].legend(loc='best')
-    axs_unroll[i].set_xlabel("time (sec)")
-    axs_unroll[i].set_ylabel("ru")
-    axs_unroll[i].set_title(f"Experiment-{train_trial_index[i][0]}, Trial-{train_trial_index[i][1]}")
-fig1.tight_layout()
-
-# plot test result
-num_trials_test = len(x_array_test)  # total num of trials in test set
-nr = int(np.ceil(num_trials_test / nc))  # num of rows in subplot
-
-fig2, axs2 = plt.subplots(nrows=nr, ncols=nc, figsize=(nc * 5, nr * 3))
-axs_unroll = axs2.flatten()
-for i in range(num_trials_test):
-    axs_unroll[i].plot(x_array_test[i, :, 0],
-                       y_array_test[i, :, 0],
-                       c='goldenrod', label='test data')
-    axs_unroll[i].plot(x_array_test[i, length:time_steps, 0],
-                       y_rnn_test_pred[i * (time_steps - length):(i + 1) * (time_steps - length)],
-                       c='navy', label='test result')
-    axs_unroll[i].legend(loc='best')
-    axs_unroll[i].set_xlabel("time (sec)")
-    axs_unroll[i].set_ylabel("ru")
-    axs_unroll[i].set_title(f"Experiment-{test_trial_index[i][0]}, Trial-{test_trial_index[i][1]}")
-fig2.tight_layout()
