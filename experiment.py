@@ -7,7 +7,6 @@ from keras.callbacks import EarlyStopping
 import cssData
 import prepareData
 from matplotlib import pyplot as plt
-
 # %% import data ad dataframe
 
 data_dir = "C:/Users/baage/Desktop/Choi_MSI/02_개인_공동연구/Liq/liq_data"  # get the data folder path
@@ -115,7 +114,7 @@ model.summary()
 
 # train with batch
 history = model.fit(x_rnn_train_sf, y_rnn_train_sf,
-                    epochs=50, batch_size=32, verbose=2,
+                    epochs=10, batch_size=32, verbose=2,
                     validation_split=0.20,
                     callbacks=callbacks_list,
                     shuffle=True)
@@ -138,66 +137,25 @@ plt.ylabel("loss (MAPE)")
 y_rnn_train_pred = model.predict(x_rnn_train)
 y_rnn_test_pred = model.predict(x_rnn_test)
 
+#%% plot x_array and y_array
 
-# %% Delete
-# expIndex_train = [0]
-# trialIndex_train = [[0, 1]]
-# expIndex_test = [0]
-# trialIndex_test = [[11]]
-#
-# train_trial_index= []
-# for i in expIndex_train:
-#     for j in trialIndex_train[i]:
-#         train_trial_index.append([i, j])
-# print(f"expriment-{train_trial_index[1][0]}, trial-{train_trial_index[1][1]}")
-#
-#
-# test_trial_index= []
-# for i in expIndex_test:
-#     for j in trialIndex_test[i]:
-#         test_trial_index.append([i, j])
-# print(f"expriment-{test_trial_index[0][0]}, trial-{test_trial_index[0][1]}")
+import plotResult
 
-# %% test
-# import plotResult
-#
-# ans = plotResult.plot_dataset(
-#     x_array=x_array_train, y_array=y_array_train,
-#     title_index=train_trial_index, legends=selectCols)
+inputData = plotResult.plot_dataset(
+    x_array=x_array_train, y_array=y_array_train,
+    title_index=train_trial_index, legends=selectCols)
 
-# %% Plot input and output array
+#%% plot training and prediction result
+trainResult = plotResult.plot_predictionResult(
+    x_array_train=x_array_train, y_array_train=y_array_train, y_rnn_pred=y_rnn_train_pred,
+    time_steps=time_steps, window_length=length,
+    title_index=train_trial_index)
 
-nc = 3
+trainResult = plotResult.plot_predictionResult(
+    x_array_train=x_array_train, y_array_train=y_array_train, y_rnn_pred=y_rnn_test_pred,
+    time_steps=time_steps, window_length=length,
+    title_index=test_trial_index)
 
-# plot data for train
-num_trials_train = len(x_array_train)  # total num of trials in train set
-nr = int(np.ceil(num_trials_train / nc))  # num of rows in subplot
-
-fig1, axs1 = plt.subplots(nrows=nr, ncols=nc, figsize=(nc * 5, nr * 3))
-axs_unroll = axs1.flatten()
-for i in range(num_trials_train):
-    axs_unroll[i].plot(x_array_train[i, :, :])
-    axs_unroll[i].plot(y_array_train[i, :, :])
-    axs_unroll[i].legend(selectCols, loc='best')
-    axs_unroll[i].set_xlabel("Data points")
-    axs_unroll[i].set_ylabel("Normalized values")
-    axs_unroll[i].set_title(f"Experiment-{train_trial_index[i][0]}, Trial-{train_trial_index[i][1]}")
-fig1.tight_layout()
-
-# plot data for test
-num_trials_test = len(x_array_test)  # total num of trials in test set
-nr = int(np.ceil(num_trials_test / nc))  # num of rows in subplot
-
-fig2, axs2 = plt.subplots(nrows=nr, ncols=nc, figsize=(nc * 5, nr * 3))
-axs_unroll = axs2.flatten()
-for i in range(num_trials_test):
-    axs_unroll[i].plot(x_array_test[i, :, :])
-    axs_unroll[i].plot(y_array_test[i, :, :])
-    axs_unroll[i].legend(selectCols, loc='best')
-    axs_unroll[i].set_xlabel("Data points")
-    axs_unroll[i].set_ylabel("Values")
-    axs_unroll[i].set_title(f"Experiment-{test_trial_index[i][0]}, Trial-{test_trial_index[i][1]}")
-fig1.tight_layout()
 
 # %% Plot train result
 

@@ -103,20 +103,18 @@ def LookIntoData(timeIndex, expNumList=expNumList(), dataframe=to_dataframe()):
     This function look into those.
     """
     for k in range(len(expNumList)):
-        len_dataList = len(dataframe[k])
+        len_dataList = len(dataframe[k])  # return num of trials at `k`th experiment
         print(f"Experiment{expNumList[k]}----------------------------------------")
 
         for i in range(len_dataList):
             print(f"*Trial-{i+1}")
-            df = dataframe[k][i]  # choose your experiment number
-            index = df.index
-            index_last = index[-1]
-            time = df['Time [sec]']
-            time_last = time[index_last]
-            index_choose = timeIndex  # choose an index for the time you want to get
-            time_choose = time[index_choose]
-
-            time_interval = time_last/index_last
+            df = dataframe[k][i]  # load dataframe for the specified exp-trial
+            index = df.index  # get the index of the dataframe
+            index_last = index[-1]  # get the last index
+            time = df['Time [sec]']  # get the time steps (sec)
+            time_last = time[index_last]  # get the last time step
+            time_choose = time[timeIndex]  # get the time (sec) at the specified index
+            time_interval = time_last/index_last  # get the time interval (sec) between each data point
 
             print(f"last index and time:{index_last}, {time_last}; interval: {time_interval:.4f}\n{timeIndex} time step is: {time_choose} sec")
 
