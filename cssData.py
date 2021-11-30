@@ -8,19 +8,28 @@ from data_importing_functions import getDataDirList
 
 
 def data_dir():
-    # define directory where data exists
+    """"
+    define directory where data exists
+    """
+
     data_dir = "C:/Users/baage/Desktop/Choi_MSI/02_개인_공동연구/Liq/liq_data"
     return data_dir
 
 
 def expNumList():
-    # define experiment numbers that you want to include from the whole data
+    """"
+    define experiment numbers that you want to include from the whole data
+    """
+
     expNumList = [7, 8, 9, 10]
     return expNumList
 
 
 def relativeDensity():
-    # define relative densities for each experiment and trials
+    """
+    define relative densities for each experiment and trials
+    """
+
     Dr_exp7 = np.array([55, 54, 47, 56, 52, 52, 39, 52, 41, 43,
                         39, 39, 33, 35, 43, 35, 41, 44, 53]) / 100
     Dr_exp8 = np.array([76, 94, 89, 77, 72, 73, 85, 88, 90, 74]) / 100
@@ -36,47 +45,48 @@ def relativeDensity():
 
 
 def to_dataframe(expNumList=expNumList(), data_dir=data_dir(), Drs=relativeDensity()):
+    """make a list to contain dataframe for the whole data"""
 
-    # make a list to contain dataframe for the whole data
-    df_all = []
+    df_all = []  # make an empty list to contain dataframes
 
     # get the number of trials for each experiment
     for exp in expNumList:
-        dataDirList = getDataDirList(exp, basedir=data_dir)
-        num_exps = len(expNumList) # get the number of experiments
-        num_trials = len(dataDirList) #
+        dataDirList = getDataDirList(exp, basedir=data_dir)  # get dir list of trial files in each exp
+        num_exps = len(expNumList)  # get num of experiments
+        num_trials = len(dataDirList)  # get num of trials in each exp
 
-        # make a list to contain dataframe for each trial
+        # make a list to contain a dataframe for each trial in the exp
         df_trial = []
 
-        # get data frame for a single trial and append it to `df_trial`
+        # get dataframe for a single trial and append it to `df_trial`
         for trial in range(num_trials):
 
-            # make a dataframe for the specified `trialNum`
-            dataDir = dataDirList[trial] # get directory of each `trial.csv`
-            df_single = pd.read_csv(dataDir, header=5) # make `.csv` to pandas `df`
+            # make a dataframe for each trial
+            dataDir = dataDirList[trial]  # get directory of each `trial.csv`
+            df_single = pd.read_csv(dataDir, header=5)  # make `.csv` to pandas `df`
 
-            # insert Dr values as a first column
+            # insert Dr values at the first column of the dataframe
             df_single.insert(0, "Dr [%]", Drs[exp-7][trial])
 
-            # insert ru
+            # compute and insert ru at the 4th column of the dataframe
             # confining pressure of the test is the first (starting) effective vertical stress
-            confining_pressure = df_single.iloc[0, 4] # get conf pressure of the trial
+            confining_pressure = df_single.iloc[0, 4]  # get conf pressure of the trial
             ru = df_single['Excess Pore Pressure [kPa]']/confining_pressure
             df_single.insert(5, "ru", ru)
 
-            # Append this dataframe for a single trial to `df_trial`
+            # Append this dataframe for the trial to `df_trial`
             df_trial.append(df_single)
 
-        # Append `df_trial`
+        # Append `df_trial` to `df_all`
         df_all.append(df_trial)
 
     return df_all
 
 
 def plotTrial(expIndex, trialIndex, dataframe=to_dataframe()):
+    """plot all the columns in the dataframe at expIndex and trialIndex"""
 
-    dataColNames = dataframe[expIndex][trialIndex].columns # get data column names
+    dataColNames = dataframe[expIndex][trialIndex].columns  # get data column names
 
     # plot for each data columns
     fig, axs = plt.subplots(nrows=len(dataColNames), ncols=1, figsize=(13, 15))
@@ -88,7 +98,10 @@ def plotTrial(expIndex, trialIndex, dataframe=to_dataframe()):
 
 
 def LookIntoData(timeIndex, expNumList=expNumList(), dataframe=to_dataframe()):
-
+    """
+    Some of data has a irregular time interval and different data points.
+    This function look into those.
+    """
     for k in range(len(expNumList)):
         len_dataList = len(dataframe[k])
         print(f"Experiment{expNumList[k]}----------------------------------------")
