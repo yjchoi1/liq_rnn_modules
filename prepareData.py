@@ -73,9 +73,9 @@ def normalize_cols(data_array, cols_to_normalize):
     data_array_unroll_normalized = np.copy(data_array_unroll[:, :])  # array to contain normalized dataset
 
     # normalize by the max val of each selected cols
-    for i in cols_to_normalize:  # iterate over the selected cols
-        max_val_cols[i, 0] = max(data_array_unroll[:, i])  # save the max vals of each col
-        data_array_unroll_normalized[:, i] = data_array_unroll[:, i] / max_val_cols[i, 0]  # normalize each col by the max vals
+    for i, col in enumerate(cols_to_normalize):  # iterate over the selected cols
+        max_val_cols[i, 0] = max(data_array_unroll[:, col])  # save the max vals of each col
+        data_array_unroll_normalized[:, col] = data_array_unroll[:, col] / max_val_cols[i, 0]  # normalize each col by the max vals
 
     # reshape data to the shape before unrolling
     data_array_normalized = np.reshape(data_array_unroll_normalized, (numTrials, numDataPoints, numCols))
