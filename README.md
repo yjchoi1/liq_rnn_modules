@@ -6,6 +6,6 @@ Experiment data download link: https://drive.google.com/file/d/1G1zMdk4n9qdUHg7B
 `data_importing_functions.py`: Get the directory and file names of the data.\
 `cssData.py`: Script for converting CSS data (.txt files) to dataframe, and add relative density and ru to it. 
 Script for plotting the trial.\
-`prepareData.py`: Script for preprocessing of the prepared dataframe\
-`train.py`: RNN training\
+`prepareData.py`: Script for preprocessing of the prepared dataframe by `cssData.py`\
+`train.py`: RNN training
 
