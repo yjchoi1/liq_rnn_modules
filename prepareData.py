@@ -2,7 +2,17 @@ import numpy as np
 
 
 def selectData(dfList, exps, trials, cols):
-
+    """
+    choose which exp-trials and its columns to use from the list of dataframes.
+    :param dfList: a list of dataframes
+    :param exps: choose a list of experiment indices
+    :param trials: choose a list of trial indices
+    for example, when you set exps=[0, 1] and trials=[[0,1], [5,7]],
+    you are selecting exps-trials of 0-0, 0-1, 1-5, 1-7.
+    :param cols: choose a list of headers of the dataframe to use
+    :return:
+    a list of 2D-arrays (shape=(data_points, columns)) that corresponds to the selected exps-trials
+    """
     # containers
     exp_trial_index = []
     data_arrays = []
@@ -42,6 +52,13 @@ def getConfPressure(dfList, exps, trials):
 
 
 def getMaxColValue(data_arrays, cols):
+    """
+    find a maximum value of the `data_arrays` for specified `cols` for all trials
+    :param data_arrays: 3D shaped array-like data. shape=(trials, data_points, columns)
+    :param cols: list of indices of columns that you want to find the max value
+    :return:
+    maximum values of specified `cols`
+    """
 
     # container
     maxColValues = np.zeros((len(cols), 1))  # array to contain normalization factor
@@ -55,6 +72,18 @@ def getMaxColValue(data_arrays, cols):
 
 
 def normalize(data_arrays, maxColValues, confPressures, colsToMaxNormalize, colToStressNormalize=1):
+    """
+    Normalize a list of 2-D shaped array-like data.
+    It is intended to normalize the shear stress by the confining pressure of each trial,
+    and time [sec] by the maximum time of whole trials.
+    :param data_arrays: a list of 2-D shaped array-like data. shape=(data_points, columns) corresponding to each trial
+    :param maxColValues: maximum column values for all trials obtained by `getMaxColValue` function
+    :param confPressures: confining pressure of each trial obtained by `getConfPressure` function
+    :param colsToMaxNormalize: column indices of `data_arrays` that you want to normalize with the max value
+    :param colToStressNormalize: column indices of `data_arrays` that you want to normalize with confining pressure
+    :return:
+    normalized data_arrays
+    """
 
     # container
     data_arrays_normalized = data_arrays.copy()
@@ -71,7 +100,15 @@ def normalize(data_arrays, maxColValues, confPressures, colsToMaxNormalize, colT
 
 
 def RNN_inputs(data_arrays, features, targets, length):
-
+    """
+    make data for RNN inputs and a few other useful variables in `dict` format.
+    :param data_arrays: a list of normalized 2-D shaped array-like data (shape=(data_points, columns))
+    :param features: a list of indices for features
+    :param targets: a list of indices for target
+    :param length: length of sampling window
+    :return:
+    returns dict that is described at the end of this function.
+    """
     # containers
     x_arrays = []
     y_arrays = []
@@ -98,7 +135,7 @@ def RNN_inputs(data_arrays, features, targets, length):
         x_rnn = list()  # container for x_rnn
         y_rnn = list()  # container for y_rnn
 
-        for j in range(dataPoints - length):  # grab from i to i + length
+        for j in range(dataPoints - length):  # grab samples from j to j + length
             sample_train = x_array[j:j+length, :]
             outcome_train = y_array[j+length, 0]
             x_rnn.append(sample_train)
@@ -113,11 +150,13 @@ def RNN_inputs(data_arrays, features, targets, length):
     y_rnn = np.concatenate(Ys_rnn, axis=0)
 
     dataDict = {
-        "x_arrays": x_arrays,
-        "y_arrays": y_arrays,
-        "dataPoints_list": dataPoints_list,
-        "x_rnn": x_rnn,
-        "y_rnn": y_rnn
+        "x_arrays": x_arrays,  # a list of data to be used as features
+        "y_arrays": y_arrays,  # a list of data to be used as a target
+        "dataPoints_list": dataPoints_list,  # number of datapoint for each trial
+        "x_rnn": x_rnn,  # x_rnn (concatenated)
+        "y_rnn": y_rnn,  # y_rnn (concatenated)
+        "Xs_rnn": Xs_rnn,  # x_rnn before concatenating
+        "Ys_rnn": Ys_rnn  # y_rnn before concatenating
     }
 
     return dataDict

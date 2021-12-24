@@ -41,6 +41,7 @@ def relativeDensity():
     Dr_exp10 = np.array([78, 72, 84, 79, 82, 86, 89, 74, 70, 74, 80, 78, 89,
                          84, 89, 84, 81, 83, 91, 86, 78, 73, 72, 71, 76, 80, 73, 74, 73]) / 100
     Drs = [Dr_exp7, Dr_exp8, Dr_exp9, Dr_exp10]
+
     return Drs
 
 

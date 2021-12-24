@@ -21,6 +21,26 @@ def plot_dataset(x_arrays, y_arrays, title_index, legends, subplot_ncols=3):
     return fig
 
 
+def plot_predictionResult_v2(Ys_rnn, Ys_rnn_pred, title_index, subplot_ncols=3):
+    num_trials = len(Ys_rnn)  # total num of trials in train set
+    nr = int(np.ceil(num_trials / subplot_ncols))  # num of rows in subplot
+
+    # plot
+    fig, axs = plt.subplots(nrows=nr, ncols=subplot_ncols, figsize=(subplot_ncols * 5, nr * 3))
+    axs_unroll = axs.flatten()
+    for i in range(num_trials):
+        axs_unroll[i].plot(Ys_rnn[i],
+                           c='goldenrod', label='train data')
+        axs_unroll[i].plot(Ys_rnn_pred[i],
+                           c='navy', label='train result')
+        axs_unroll[i].legend(loc='best')
+        axs_unroll[i].set_xlabel("Data points")
+        axs_unroll[i].set_ylabel("Normalized values")
+        axs_unroll[i].set_title(f"Experiment-{title_index[i][0]}, Trial-{title_index[i][1]}")
+    fig.tight_layout()
+
+
+# This function is not used
 def plot_predictionResult(x_arrays, y_arrays, y_rnn_pred, window_length, dps,
                           title_index, subplot_ncols=3):
     # calculate datapoint indices in `y_rnn_pred` to plot
@@ -52,3 +72,6 @@ def plot_predictionResult(x_arrays, y_arrays, y_rnn_pred, window_length, dps,
     fig.tight_layout()
 
     return fig
+
+
+

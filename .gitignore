@@ -1,3 +1,7 @@
+*.iml
+*.xml
+*.pyc
+*.idea
 *.ipynb
 notebook_with_modules_colab.ipynb
 notebook_with_modules_frontera.ipynb
