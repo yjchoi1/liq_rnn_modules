@@ -139,6 +139,28 @@ plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel(f"Loss ({metrics[choose_loose]})")
 
+# %% get prediction result for each trial
+
+# inputs
+Xs_rnn_train = data_dict_train['Xs_rnn']
+Xs_rnn_test = data_dict_test['Xs_rnn']
+
+# containers
+Ys_rnn_train_pred = []
+Ys_rnn_test_pred = []
+
+# get prediction with trial datasets
+num_trials = len(Xs_rnn_train)  # total num of trials in train sets
+for i in range(num_trials):
+    Y_rnn_train_pred = model.predict(Xs_rnn_train[i])
+    Ys_rnn_train_pred.append(Y_rnn_train_pred)
+
+# get prediction with test datasets
+num_trials = len(Xs_rnn_test)  # total num of trials in test sets
+for i in range(num_trials):
+    Y_rnn_test_pred = model.predict(Xs_rnn_test[i])
+    Ys_rnn_test_pred.append(Y_rnn_test_pred)
+
 # %% plot datasets
 
 x_arrays_train = data_dict_train["x_arrays"]  # features selected to be sampled by window later
