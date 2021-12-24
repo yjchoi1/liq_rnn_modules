@@ -1,101 +1,107 @@
+import tensorflow as tf
 import numpy as np
-from keras.models import Sequential, load_model
-from keras.layers import Dense, Dropout, SimpleRNN, LSTM, GRU, Flatten
-from keras import optimizers
-from keras.callbacks import EarlyStopping
+from matplotlib import pyplot as plt
+
+from tensorflow.keras.layers import Dense, Dropout, SimpleRNN, LSTM, GRU, Flatten
+from tensorflow.keras import optimizers
+from tensorflow.keras.callbacks import EarlyStopping
 
 import cssData
 import prepareData
-from matplotlib import pyplot as plt
-# %% import data ad dataframe
+import plotResult
 
-data_dir = "C:/Users/baage/Desktop/Choi_MSI/02_개인_공동연구/Liq/liq_data"  # get the data folder path
-expNumList1 = cssData.expNumList()  # get expNumList that you want to consider
+# %% import data and dataframe
+
+data_dir = "C:/Users/baage/choi_gr16/2_Research/202109_MLliq/liq_data2"  # define the data folder path
+expNumList1 = cssData.expNumList()  # get expNumList that you want to consider (by default, [7, 8, 9, 10])
 Drs = cssData.relativeDensity()  # get relative density (Dr) data for each trial
 
 # get dataframe for all trials
 df_all = cssData.to_dataframe(data_dir=data_dir, expNumList=expNumList1, Drs=Drs)
 
-# look into data
-cssData.LookIntoData(dataframe=df_all, timeIndex=1000)
+# # get some useful information about data
+# cssData.LookIntoData(dataframe=df_all, timeIndex=1000)
 
-# plot trial
-cssData.plotTrial(dataframe=df_all, expIndex=2, trialIndex=34)
-# %% reshape dataframe
+# # plot a trial
+# cssData.plotTrial(dataframe=df_all, expIndex=2, trialIndex=34)
 
-# see columns in the raw dataframe
-colNames = list(df_all[0][0].columns)
+# %% select a dataframe at a exp-trial.
 
-# select columns and length and cut the dataframe to the form you what to get
-selectCols = ['Time [sec]', 'Shear Stress [kPa]', 'ru']
-time_steps = 8600
-df_cut = prepareData.cutDataFrame(time_steps=8600, cols=selectCols, dataframe=df_all)
+# input
+exps_train = [0]
+trials_train = [[0, 1, 6]]
+exps_test = [1]
+trials_test = [[0, 2, 4]]
+cols = ['Time [sec]', 'Dr [%]', 'Shear Stress [kPa]', 'ru']
 
-# %% Train and test split
+# get a list of 2-D shaped array-like data with shape=(data_points, columns), which corresponds to each trial.
+data_arrays_train, train_indices = prepareData.selectData(
+    dfList=df_all, exps=exps_train, trials=trials_train, cols=cols)
+data_arrays_test, test_indices = prepareData.selectData(
+    dfList=df_all, exps=exps_test, trials=trials_test, cols=cols)
 
-# choose your exp and trial index to use.
-# for i in expIndex; for j in trialIndex, i and j iterate.
-# for example, expIndex=[0, 1], trialIndex=[[0,1], [0, 1, 3]],
-# the result indices are (0,0) (0, 1), (1, 0), (1, 1), (1, 3).
-expIndex_train = [0]
-trialIndex_train = [[0, 1]]
-expIndex_test = [0]
-trialIndex_test = [[11]]
+#%% Normalize
 
-# The method `prepareData.data_array` also returns the index of (exp, trial).
-# This will be used to define the title of result plots.
-data_array_train, train_trial_index = prepareData.data_array(
-    expIndex=expIndex_train, trialIndex=trialIndex_train, df_cut=df_cut)
-data_array_test, test_trial_index = prepareData.data_array(
-    expIndex=expIndex_test, trialIndex=trialIndex_test, df_cut=df_cut)
+# get conf pressure that is used to normalization
+confPressures_train = prepareData.getConfPressure(dfList=df_all, exps=exps_train, trials=trials_train)
+confPressures_test = prepareData.getConfPressure(dfList=df_all, exps=exps_test, trials=trials_test)
 
-# %% normalize the data (only selected cols)
+# get max values that is used to normalization
+maxColValue_train = prepareData.getMaxColValue(data_arrays=data_arrays_train, cols=[0])  # cols=[0] is 'time [sec]'
+maxColValue_test = prepareData.getMaxColValue(data_arrays=data_arrays_test, cols=[0])
 
-# The best practice is to normalize train & test separately to prevent data leak
-# The method `prepareData.normalize_cols` also returns the normalization factors.
-# These might be used to denormalize the data back to the original values.
-colsToConsider = [0, 1]  # 0: time steps, 1: stress, 2: ru
-data_array_train_normalized, normalizingFactors_train = prepareData.normalize_cols(
-    data_array=data_array_train, cols_to_normalize=colsToConsider)
-data_array_test_normalized, normalizingFactors_test = prepareData.normalize_cols(
-    data_array=data_array_test, cols_to_normalize=colsToConsider)
-
-# %% set x and y
-
-# inputs
-features = [0, 1]  # 0: timestep, 1: stress
-target = [2]  # 2: ru
-
-# split x and y for train and test, from the data_array
-x_array_train = data_array_train_normalized[:, :, features]
-y_array_train = data_array_train_normalized[:, :, target]
-x_array_test = data_array_test_normalized[:, :, features]
-y_array_test = data_array_test_normalized[:, :, target]
-
-# %% make data for time-series input for RNN layers (time window method)
-length = 50
-
-x_rnn_train, y_rnn_train, x_rnn_test, y_rnn_test = prepareData.windowDataset(
-    x_array_train, y_array_train, x_array_test, y_array_test, length, time_steps
+# normalize train data array
+data_arrays_train_normalized = prepareData.normalize(
+    data_arrays=data_arrays_train,
+    maxColValues=maxColValue_train, confPressures=confPressures_train,
+    colsToMaxNormalize=[0], colToStressNormalize=[2]
 )
+
+# normalize test data array
+data_arrays_test_normalized = prepareData.normalize(
+    data_arrays=data_arrays_test,
+    maxColValues=maxColValue_test, confPressures=confPressures_test,
+    colsToMaxNormalize=[0], colToStressNormalize=[2]
+)
+
+# %% RNN inputs
+
+# each index specified below corresponds to the index of the variable `cols`
+features = [0, 1, 2]
+targets = [3]
+length = 100
+
+# obtain data for RNN inputs and a few other useful variables in `dict` format
+data_dict_train = prepareData.RNN_inputs(
+    data_arrays=data_arrays_train_normalized, features=features, targets=targets, length=length)
+data_dict_test = prepareData.RNN_inputs(
+    data_arrays=data_arrays_test_normalized, features=features, targets=targets, length=length)
+
+# input datasets for RNN model (shape=(samples, window_length, features))
+x_rnn_train = data_dict_train["x_rnn"]
+y_rnn_train = data_dict_train["y_rnn"]
+x_rnn_test = data_dict_test["x_rnn"]
+y_rnn_test = data_dict_test["y_rnn"]
 
 # %% shuffle
 
 shuffler = np.random.permutation(len(x_rnn_train))  # get indices for shuffling
-x_rnn_train_sf = x_rnn_train[shuffler]  # shuffle the dataset
-y_rnn_train_sf = y_rnn_train[shuffler]  # shuffle the dataset
+x_rnn_train_sf = x_rnn_train[shuffler]
+y_rnn_train_sf = y_rnn_train[shuffler]
 
-# %% build a model
+# %% build a model based on tf2.0 API
 
-# now build the RNN
-model = Sequential()
-model.add(LSTM(128, input_shape=(x_rnn_train.shape[1], x_rnn_train.shape[2]), activation='tanh'))
-# model.add(Dropout(0.2))
-model.add(Dense(64, activation='tanh'))
-# model.add(Dropout(0.2))
-model.add(Dense(16, activation='tanh'))
-# model.add(Dropout(0.2))
-model.add(Dense(1, activation='tanh'))
+# construct layers
+inputs = tf.keras.Input(shape=(x_rnn_train.shape[1], x_rnn_train.shape[2]))
+x = LSTM(128, activation='tanh', return_sequences=True)(inputs)
+x = LSTM(128, activation='tanh')(x)
+# x = Dropout(0.1)(x)
+x = Dense(64, activation='tanh')(x)
+# x = Dropout(0.1)(x)
+x = Dense(16, activation='tanh')(x)
+# x = Dropout(0.1)(x)
+outputs = Dense(1, activation='tanh')(x)
+model = tf.keras.Model(inputs, outputs)
 
 # monitor validation progress
 early = EarlyStopping(monitor="val_loss", mode="min", patience=1000)
@@ -105,9 +111,14 @@ callbacks_list = [early]
 opt = optimizers.Adam(learning_rate=0.001)  # default learning rate=0.001
 
 # compile
-model.compile(loss='mean_absolute_percentage_error', optimizer=opt, metrics=['mape'])
+loss = ['mean_squared_error', 'mean_absolute_percentage_error', 'mean_absolute_error']
+metrics = ['mse', 'mape', 'mae']
+choose_loose = 0
+model.compile(loss=loss[choose_loose],
+              optimizer=opt,
+              metrics=metrics[choose_loose])
 
-# Show a model summary table
+# show summary
 model.summary()
 
 # %% train
@@ -120,38 +131,71 @@ history = model.fit(x_rnn_train_sf, y_rnn_train_sf,
                     shuffle=True)
 
 # %% plot model training history
+
 plt.figure()
 plt.plot(history.history['loss'], label='train')
 plt.plot(history.history['val_loss'], label='val')
 plt.legend()
 plt.xlabel("Epoch")
-plt.ylabel("loss (MAPE)")
-# plt.ylim(3, 46)
-# plt.show()
-# plt.savefig(save_eval_dir)
+plt.ylabel(f"Loss ({metrics[choose_loose]})")
 
-# %% get predictions
+# %% plot datasets
 
-# Note that the model is trained with shuffled data, ...
-# while the prediction is done with unshuffled data.
-y_rnn_train_pred = model.predict(x_rnn_train)
-y_rnn_test_pred = model.predict(x_rnn_test)
+x_arrays_train = data_dict_train["x_arrays"]  # features selected to be sampled by window later
+y_arrays_train = data_dict_train["y_arrays"]  # labels selected to be sampled by window later
+x_arrays_test = data_dict_test["x_arrays"]  # features selected to be sampled by window later
+y_arrays_test = data_dict_test["y_arrays"]  # labels selected to be sampled by window later
 
-#%% plot x_array and y_array
+# plot data used for train sets
+plotResult.plot_dataset(
+    x_arrays=x_arrays_train, y_arrays=y_arrays_train,
+    title_index=train_indices, legends=cols, subplot_ncols=3
+)
 
-import plotResult
+# plot data used for test sets
+plotResult.plot_dataset(
+    x_arrays=x_arrays_test, y_arrays=y_arrays_test,
+    title_index=test_indices, legends=cols, subplot_ncols=3
+)
 
-inputData = plotResult.plot_dataset(
-    x_array=x_array_train, y_array=y_array_train,
-    title_index=train_trial_index, legends=selectCols)
+# %% plot prediction
 
-#%% plot training and prediction result
-trainResult = plotResult.plot_predictionResult(
-    x_array_sample=x_array_train, y_array_sample=y_array_train, y_rnn_pred=y_rnn_train_pred,
-    time_steps=time_steps, window_length=length,
-    title_index=train_trial_index)
+# get target (true) Y data
+Ys_rnn_train = data_dict_train['Ys_rnn']
+Ys_rnn_test = data_dict_test['Ys_rnn']
 
-trainResult = plotResult.plot_predictionResult(
-    x_array_sample=x_array_test, y_array_sample=y_array_test, y_rnn_pred=y_rnn_test_pred,
-    time_steps=time_steps, window_length=length,
-    title_index=test_trial_index)
+# plot prediction result for train sets
+plotResult.plot_predictionResult_v2(Ys_rnn=Ys_rnn_train, Ys_rnn_pred=Ys_rnn_train_pred,
+                                    title_index=train_indices, subplot_ncols=3
+                                    )
+# plot prediction result for test sets
+plotResult.plot_predictionResult_v2(Ys_rnn=Ys_rnn_test, Ys_rnn_pred=Ys_rnn_test_pred,
+                                    title_index=test_indices, subplot_ncols=3
+                                    )
+
+# %% [not yet finished] Use ru as an input and also use it to prediction
+
+Xs_rnn_train = data_dict_train['Xs_rnn']
+ru_preds_list = []
+
+for X_rnn_train in Xs_rnn_train:
+
+    # containers
+    ru_preds = []
+    ru_pred_tmp = X_rnn_train[0, :, 2]
+    x_rnn_train2 = np.copy(x_rnn_train)
+
+    # predict
+    for i in range(len(x_rnn_train2)):
+        # for i in range(2):
+
+        ru_pred = model.predict(x_rnn_train2[i:i + 1, :, :])
+        ru_preds.append(ru_pred)
+        if i == len(x_rnn_train) - 1:
+            break
+
+        tmpIndex = i % len(ru_pred_tmp)
+        ru_pred_tmp[-tmpIndex - 1] = ru_pred
+        x_rnn_train2[i + 1, :, 2] = ru_pred_tmp
+
+    ru_preds_list.append(ru_preds)
