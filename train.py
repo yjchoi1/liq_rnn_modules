@@ -19,11 +19,11 @@ Drs = cssData.relativeDensity()  # get relative density (Dr) data for each trial
 # get dataframe for all trials
 df_all = cssData.to_dataframe(data_dir=data_dir, expNumList=expNumList1, Drs=Drs)
 
-# # get some useful information about data
-# cssData.LookIntoData(dataframe=df_all, timeIndex=1000)
+# get some useful information about data
+cssData.LookIntoData(dataframe=df_all, timeIndex=1000)
 
-# # plot a trial
-# cssData.plotTrial(dataframe=df_all, expIndex=2, trialIndex=34)
+# plot a trial
+cssData.plotTrial(dataframe=df_all, expIndex=2, trialIndex=34)
 
 # %% select a dataframe at a exp-trial.
 
