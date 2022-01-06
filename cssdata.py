@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 # import from my modules
-from data_importing_functions import getDataDirList
+from dataimportingfunctions import getDataDirList
 
 
 def data_dir():

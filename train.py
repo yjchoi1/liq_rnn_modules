@@ -6,24 +6,24 @@ from tensorflow.keras.layers import Dense, Dropout, SimpleRNN, LSTM, GRU, Flatte
 from tensorflow.keras import optimizers
 from tensorflow.keras.callbacks import EarlyStopping
 
-import cssData
-import prepareData
-import plotResult
+import cssdata
+import preparedata
+import plotresult
 
 # %% import data and dataframe
 
 data_dir = "C:/Users/baage/choi_gr16/2_Research/202109_MLliq/liq_data2"  # define the data folder path
-expNumList1 = cssData.expNumList()  # get expNumList that you want to consider (by default, [7, 8, 9, 10])
-Drs = cssData.relativeDensity()  # get relative density (Dr) data for each trial
+expNumList1 = cssdata.expNumList()  # get expNumList that you want to consider (by default, [7, 8, 9, 10])
+Drs = cssdata.relativeDensity()  # get relative density (Dr) data for each trial
 
 # get dataframe for all trials
-df_all = cssData.to_dataframe(data_dir=data_dir, expNumList=expNumList1, Drs=Drs)
+df_all = cssdata.to_dataframe(data_dir=data_dir, expNumList=expNumList1, Drs=Drs)
 
 # get some useful information about data
-cssData.LookIntoData(dataframe=df_all, timeIndex=1000)
+cssdata.LookIntoData(dataframe=df_all, timeIndex=1000)
 
 # plot a trial
-cssData.plotTrial(dataframe=df_all, expIndex=2, trialIndex=34)
+cssdata.plotTrial(dataframe=df_all, expIndex=2, trialIndex=34)
 
 # %% select a dataframe at a exp-trial.
 
@@ -35,30 +35,30 @@ trials_test = [[0, 2, 4]]
 cols = ['Time [sec]', 'Dr [%]', 'Shear Stress [kPa]', 'ru']
 
 # get a list of 2-D shaped array-like data with shape=(data_points, columns), which corresponds to each trial.
-data_arrays_train, train_indices = prepareData.selectData(
+data_arrays_train, train_indices = preparedata.selectData(
     dfList=df_all, exps=exps_train, trials=trials_train, cols=cols)
-data_arrays_test, test_indices = prepareData.selectData(
+data_arrays_test, test_indices = preparedata.selectData(
     dfList=df_all, exps=exps_test, trials=trials_test, cols=cols)
 
 #%% Normalize
 
 # get conf pressure that is used to normalization
-confPressures_train = prepareData.getConfPressure(dfList=df_all, exps=exps_train, trials=trials_train)
-confPressures_test = prepareData.getConfPressure(dfList=df_all, exps=exps_test, trials=trials_test)
+confPressures_train = preparedata.getConfPressure(dfList=df_all, exps=exps_train, trials=trials_train)
+confPressures_test = preparedata.getConfPressure(dfList=df_all, exps=exps_test, trials=trials_test)
 
 # get max values that is used to normalization
-maxColValue_train = prepareData.getMaxColValue(data_arrays=data_arrays_train, cols=[0])  # cols=[0] is 'time [sec]'
-maxColValue_test = prepareData.getMaxColValue(data_arrays=data_arrays_test, cols=[0])
+maxColValue_train = preparedata.getMaxColValue(data_arrays=data_arrays_train, cols=[0])  # cols=[0] is 'time [sec]'
+maxColValue_test = preparedata.getMaxColValue(data_arrays=data_arrays_test, cols=[0])
 
 # normalize train data array
-data_arrays_train_normalized = prepareData.normalize(
+data_arrays_train_normalized = preparedata.normalize(
     data_arrays=data_arrays_train,
     maxColValues=maxColValue_train, confPressures=confPressures_train,
     colsToMaxNormalize=[0], colToStressNormalize=[2]
 )
 
 # normalize test data array
-data_arrays_test_normalized = prepareData.normalize(
+data_arrays_test_normalized = preparedata.normalize(
     data_arrays=data_arrays_test,
     maxColValues=maxColValue_test, confPressures=confPressures_test,
     colsToMaxNormalize=[0], colToStressNormalize=[2]
@@ -72,9 +72,9 @@ targets = [3]
 length = 100
 
 # obtain data for RNN inputs and a few other useful variables in `dict` format
-data_dict_train = prepareData.RNN_inputs(
+data_dict_train = preparedata.RNN_inputs(
     data_arrays=data_arrays_train_normalized, features=features, targets=targets, length=length)
-data_dict_test = prepareData.RNN_inputs(
+data_dict_test = preparedata.RNN_inputs(
     data_arrays=data_arrays_test_normalized, features=features, targets=targets, length=length)
 
 # input datasets for RNN model (shape=(samples, window_length, features))
@@ -169,13 +169,13 @@ x_arrays_test = data_dict_test["x_arrays"]  # features selected to be sampled by
 y_arrays_test = data_dict_test["y_arrays"]  # labels selected to be sampled by window later
 
 # plot data used for train sets
-plotResult.plot_dataset(
+plotresult.plot_dataset(
     x_arrays=x_arrays_train, y_arrays=y_arrays_train,
     title_index=train_indices, legends=cols, subplot_ncols=3
 )
 
 # plot data used for test sets
-plotResult.plot_dataset(
+plotresult.plot_dataset(
     x_arrays=x_arrays_test, y_arrays=y_arrays_test,
     title_index=test_indices, legends=cols, subplot_ncols=3
 )
@@ -187,11 +187,11 @@ Ys_rnn_train = data_dict_train['Ys_rnn']
 Ys_rnn_test = data_dict_test['Ys_rnn']
 
 # plot prediction result for train sets
-plotResult.plot_predictionResult_v2(Ys_rnn=Ys_rnn_train, Ys_rnn_pred=Ys_rnn_train_pred,
+plotresult.plot_predictionResult_v2(Ys_rnn=Ys_rnn_train, Ys_rnn_pred=Ys_rnn_train_pred,
                                     title_index=train_indices, subplot_ncols=3
                                     )
 # plot prediction result for test sets
-plotResult.plot_predictionResult_v2(Ys_rnn=Ys_rnn_test, Ys_rnn_pred=Ys_rnn_test_pred,
+plotresult.plot_predictionResult_v2(Ys_rnn=Ys_rnn_test, Ys_rnn_pred=Ys_rnn_test_pred,
                                     title_index=test_indices, subplot_ncols=3
                                     )
 
