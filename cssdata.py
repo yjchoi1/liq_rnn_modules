@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 # import from my modules
-from dataimportingfunctions import getDataDirList
+from dataimportingfunctions import get_data_dirlist
 
 
 def data_dir():
@@ -52,7 +52,7 @@ def to_dataframe(data_dir, expNumList=expNumList(), Drs=relativeDensity()):
 
     # get the number of trials for each experiment
     for exp in expNumList:
-        dataDirList = getDataDirList(exp, basedir=data_dir)  # get dir list of trial files in each exp
+        dataDirList = get_data_dirlist(exp, basedir=data_dir)  # get dir list of trial files in each exp
         num_exps = len(expNumList)  # get num of experiments
         num_trials = len(dataDirList)  # get num of trials in each exp
 

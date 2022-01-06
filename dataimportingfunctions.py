@@ -1,7 +1,7 @@
 import os
 from natsort import natsorted # Sort 1, 10, 2, 3 to 1, 2, 3, 10
 
-def getDataDirList(expNum, basedir):
+def get_data_dirlist(expNum, basedir):
     """
     get `.txt` data directory list for specified experiments
     For example, when expNum=1, it returns ["MyData/trial-1", "MyData/trial-2", ..., "MyData/trial-n"]
