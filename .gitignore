@@ -3,5 +3,6 @@
 *.pyc
 *.idea
 *.ipynb
-notebook_with_modules_colab.ipynb
-notebook_with_modules_frontera.ipynb
+__pycache__/
+notebook_colab.ipynb
+notebook_frontera.ipynb
