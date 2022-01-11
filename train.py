@@ -1,5 +1,7 @@
 import tensorflow as tf
 import numpy as np
+import os
+import json
 from matplotlib import pyplot as plt
 
 from tensorflow.keras.layers import Dense, Dropout, SimpleRNN, LSTM, GRU, Flatten
@@ -9,59 +11,67 @@ from tensorflow.keras.callbacks import EarlyStopping
 import cssdata
 import preparedata
 import plotresult
+import model
 
 # %% import data and dataframe
 
-data_dir = "C:/Users/baage/choi_gr16/2_Research/202109_MLliq/liq_data2"  # define the data folder path
-expNumList1 = cssdata.expNumList()  # get expNumList that you want to consider (by default, [7, 8, 9, 10])
-Drs = cssdata.relativeDensity()  # get relative density (Dr) data for each trial
+cwd = os.getcwd()  # get current working directory
+data_dir = os.path.join(cwd, "rawdata")  # define the path for the rawdata
+
+expNumList1 = cssdata.exp_num_list()  # get exp_num_list that you want to consider (by default, [7, 8, 9, 10])
+Drs = cssdata.relative_density()  # get relative density (Dr) data for each trial
 
 # get dataframe for all trials
-df_all = cssdata.to_dataframe(data_dir=data_dir, expNumList=expNumList1, Drs=Drs)
+df_all = cssdata.to_dataframe(data_dir=data_dir, exp_num_list=expNumList1, Drs=Drs)
 
-# get some useful information about data
-cssdata.LookIntoData(dataframe=df_all, timeIndex=1000)
+# # get some useful information about data
+# cssdata.look_into_data(dataframe=df_all, timeIndex=1000)
+#
+# # plot a trial
+# cssdata.plot_trial(dataframe=df_all, expIndex=2, trialIndex=34)
 
-# plot a trial
-cssdata.plotTrial(dataframe=df_all, expIndex=2, trialIndex=34)
+# %% load selected a dataframe at a exp-trial.
 
-# %% select a dataframe at a exp-trial.
+inputfile = "input.json"
+inputfilepath = os.path.join(cwd, inputfile)
 
-# input
-exps_train = [0]
-trials_train = [[0, 1, 6]]
-exps_test = [1]
-trials_test = [[0, 2, 4]]
-cols = ['Time [sec]', 'Dr [%]', 'Shear Stress [kPa]', 'ru']
+with open(inputfilepath, "r") as f:
+    json_data = json.load(f)
+
+exps_train = json_data["exps_train"]
+trials_train = json_data["trials_train"]
+exps_test = json_data["exps_test"]
+trials_test = json_data["trials_test"]
+cols = json_data["cols"]
 
 # get a list of 2-D shaped array-like data with shape=(data_points, columns), which corresponds to each trial.
-data_arrays_train, train_indices = preparedata.selectData(
-    dfList=df_all, exps=exps_train, trials=trials_train, cols=cols)
-data_arrays_test, test_indices = preparedata.selectData(
-    dfList=df_all, exps=exps_test, trials=trials_test, cols=cols)
+data_arrays_train, train_indices = preparedata.select_data(
+    df_list=df_all, exps=exps_train, trials=trials_train, cols=cols)
+data_arrays_test, test_indices = preparedata.select_data(
+    df_list=df_all, exps=exps_test, trials=trials_test, cols=cols)
 
 #%% Normalize
 
-# get conf pressure that is used to normalization
-confPressures_train = preparedata.getConfPressure(dfList=df_all, exps=exps_train, trials=trials_train)
-confPressures_test = preparedata.getConfPressure(dfList=df_all, exps=exps_test, trials=trials_test)
+# get conf pressure that will be used for the normalization
+conf_pressures_train = preparedata.get_conf_pressure(dfList=df_all, exps=exps_train, trials=trials_train)
+conf_pressures_test = preparedata.get_conf_pressure(dfList=df_all, exps=exps_test, trials=trials_test)
 
-# get max values that is used to normalization
-maxColValue_train = preparedata.getMaxColValue(data_arrays=data_arrays_train, cols=[0])  # cols=[0] is 'time [sec]'
-maxColValue_test = preparedata.getMaxColValue(data_arrays=data_arrays_test, cols=[0])
+# get max values that will be used for the normalization
+max_col_value_train = preparedata.get_max_col_value(data_arrays=data_arrays_train, cols=[0])  # cols=[0] is 'time [sec]'
+max_col_value_test = preparedata.get_max_col_value(data_arrays=data_arrays_test, cols=[0])
 
 # normalize train data array
 data_arrays_train_normalized = preparedata.normalize(
     data_arrays=data_arrays_train,
-    maxColValues=maxColValue_train, confPressures=confPressures_train,
-    colsToMaxNormalize=[0], colToStressNormalize=[2]
+    max_col_values=max_col_value_train, conf_pressures=conf_pressures_train,
+    cols_to_max_normalize=[0], col_to_stress_normalize=[2]
 )
 
 # normalize test data array
 data_arrays_test_normalized = preparedata.normalize(
     data_arrays=data_arrays_test,
-    maxColValues=maxColValue_test, confPressures=confPressures_test,
-    colsToMaxNormalize=[0], colToStressNormalize=[2]
+    max_col_values=max_col_value_test, conf_pressures=conf_pressures_test,
+    cols_to_max_normalize=[0], col_to_stress_normalize=[2]
 )
 
 # %% RNN inputs
@@ -72,16 +82,16 @@ targets = [3]
 length = 100
 
 # obtain data for RNN inputs and a few other useful variables in `dict` format
-data_dict_train = preparedata.RNN_inputs(
+data_dict_train = preparedata.rnn_inputs(
     data_arrays=data_arrays_train_normalized, features=features, targets=targets, length=length)
-data_dict_test = preparedata.RNN_inputs(
+data_dict_test = preparedata.rnn_inputs(
     data_arrays=data_arrays_test_normalized, features=features, targets=targets, length=length)
 
 # input datasets for RNN model (shape=(samples, window_length, features))
-x_rnn_train = data_dict_train["x_rnn"]
-y_rnn_train = data_dict_train["y_rnn"]
-x_rnn_test = data_dict_test["x_rnn"]
-y_rnn_test = data_dict_test["y_rnn"]
+x_rnn_train = data_dict_train["x_rnn_concat"]
+y_rnn_train = data_dict_train["y_rnn_concat"]
+x_rnn_test = data_dict_test["x_rnn_concat"]
+y_rnn_test = data_dict_test["y_rnn_concat"]
 
 # %% shuffle
 
@@ -91,17 +101,7 @@ y_rnn_train_sf = y_rnn_train[shuffler]
 
 # %% build a model based on tf2.0 API
 
-# construct layers
-inputs = tf.keras.Input(shape=(x_rnn_train.shape[1], x_rnn_train.shape[2]))
-x = LSTM(128, activation='tanh', return_sequences=True)(inputs)
-x = LSTM(128, activation='tanh')(x)
-# x = Dropout(0.1)(x)
-x = Dense(64, activation='tanh')(x)
-# x = Dropout(0.1)(x)
-x = Dense(16, activation='tanh')(x)
-# x = Dropout(0.1)(x)
-outputs = Dense(1, activation='tanh')(x)
-model = tf.keras.Model(inputs, outputs)
+model = model.lstm_model(input_shape=x_rnn_train.shape)
 
 # monitor validation progress
 early = EarlyStopping(monitor="val_loss", mode="min", patience=1000)
@@ -117,9 +117,6 @@ choose_loose = 0
 model.compile(loss=loss[choose_loose],
               optimizer=opt,
               metrics=metrics[choose_loose])
-
-# show summary
-model.summary()
 
 # %% train
 
@@ -142,8 +139,8 @@ plt.ylabel(f"Loss ({metrics[choose_loose]})")
 # %% get prediction result for each trial
 
 # inputs
-Xs_rnn_train = data_dict_train['Xs_rnn']
-Xs_rnn_test = data_dict_test['Xs_rnn']
+Xs_rnn_train = data_dict_train['x_rnns']
+Xs_rnn_test = data_dict_test['x_rnns']
 
 # containers
 Ys_rnn_train_pred = []
@@ -197,7 +194,7 @@ plotresult.plot_predictionResult_v2(Ys_rnn=Ys_rnn_test, Ys_rnn_pred=Ys_rnn_test_
 
 # %% [not yet finished] Use ru as an input and also use it to prediction
 
-Xs_rnn_train = data_dict_train['Xs_rnn']
+Xs_rnn_train = data_dict_train['x_rnns']
 ru_preds_list = []
 
 for X_rnn_train in Xs_rnn_train:

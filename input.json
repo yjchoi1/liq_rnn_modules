@@ -1,0 +1,7 @@
+{
+  "exps_train": [0],
+  "trials_train": [[0, 1, 6]],
+  "exps_test": [1],
+  "trials_test": [[0, 2, 4]],
+  "cols": ["Time [sec]", "Dr [%]", "Shear Stress [kPa]", "ru"]
+}

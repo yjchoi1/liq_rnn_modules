@@ -1,10 +1,10 @@
 import numpy as np
 
 
-def selectData(dfList, exps, trials, cols):
+def select_data(df_list, exps, trials, cols):
     """
     choose which exp-trials and its columns to use from the list of dataframes.
-    :param dfList: a list of dataframes
+    :param df_list: a list of dataframes
     :param exps: choose a list of experiment indices
     :param trials: choose a list of trial indices
     for example, when you set exps=[0, 1] and trials=[[0,1], [5,7]],
@@ -24,13 +24,13 @@ def selectData(dfList, exps, trials, cols):
             exp_trial_index.append([exp, trial])
 
             # select a dataframe at a exp-trial and make it as an array
-            df_selected = dfList[exp][trial][cols]  # select a dataframe
+            df_selected = df_list[exp][trial][cols]  # select a dataframe
             data_array = np.asarray(df_selected)  # make it as an array
             data_arrays.append(data_array)  # save each data_array at each exp-trial
 
     return data_arrays, exp_trial_index
 
-def getConfPressure(dfList, exps, trials):
+def get_conf_pressure(dfList, exps, trials):
     """
     get confining pressures for each exp-trial
     :param dfList: a list of dataframe to consider
@@ -39,19 +39,19 @@ def getConfPressure(dfList, exps, trials):
     :return: a list of confining pressure
     """
 
-    confPressures = []
+    conf_pressures = []
 
     for i, exp in enumerate(exps):
         for trial in trials[i]:
 
-            confPressure = \
+            conf_pressure = \
                 dfList[exp][trial]["Effective Vertical Stress [kPa]"][0]  # get confining pressure of the trial
-            confPressures.append(confPressure)  # save confpressure at each exp-trial
+            conf_pressures.append(conf_pressure)  # save confpressure at each exp-trial
 
-    return confPressures
+    return conf_pressures
 
 
-def getMaxColValue(data_arrays, cols):
+def get_max_col_value(data_arrays, cols):
     """
     find a maximum value of the `data_arrays` for specified `cols` for all trials
     :param data_arrays: 3D shaped array-like data. shape=(trials, data_points, columns)
@@ -61,26 +61,26 @@ def getMaxColValue(data_arrays, cols):
     """
 
     # container
-    maxColValues = np.zeros((len(cols), 1))  # array to contain normalization factor
+    max_col_values = np.zeros((len(cols), 1))  # array to contain normalization factor
 
     # find max vals and save
     data_arrays_train_unroll = np.concatenate(data_arrays, axis=0)
     for i in cols:
-        maxColValues[i, 0] = max(abs(data_arrays_train_unroll[:, i]))  # save the max vals of each col
+        max_col_values[i, 0] = max(abs(data_arrays_train_unroll[:, i]))  # save the max vals of each col
 
-    return maxColValues
+    return max_col_values
 
 
-def normalize(data_arrays, maxColValues, confPressures, colsToMaxNormalize, colToStressNormalize=1):
+def normalize(data_arrays, max_col_values, conf_pressures, cols_to_max_normalize, col_to_stress_normalize=1):
     """
     Normalize a list of 2-D shaped array-like data.
     It is intended to normalize the shear stress by the confining pressure of each trial,
     and time [sec] by the maximum time of whole trials.
     :param data_arrays: a list of 2-D shaped array-like data. shape=(data_points, columns) corresponding to each trial
-    :param maxColValues: maximum column values for all trials obtained by `getMaxColValue` function
-    :param confPressures: confining pressure of each trial obtained by `getConfPressure` function
-    :param colsToMaxNormalize: column indices of `data_arrays` that you want to normalize with the max value
-    :param colToStressNormalize: column indices of `data_arrays` that you want to normalize with confining pressure
+    :param max_col_values: maximum column values for all trials obtained by `get_max_col_value` function
+    :param conf_pressures: confining pressure of each trial obtained by `get_conf_pressure` function
+    :param cols_to_max_normalize: column indices of `data_arrays` that you want to normalize with the max value
+    :param col_to_stress_normalize: column indices of `data_arrays` that you want to normalize with confining pressure
     :return:
     normalized data_arrays
     """
@@ -91,15 +91,15 @@ def normalize(data_arrays, maxColValues, confPressures, colsToMaxNormalize, colT
     # normalize data
     for i in range(len(data_arrays)):
         # normalize shear stress by confining pressure
-        data_arrays_normalized[i][:, colToStressNormalize] = data_arrays[i][:, colToStressNormalize] / confPressures[i]
+        data_arrays_normalized[i][:, col_to_stress_normalize] = data_arrays[i][:, col_to_stress_normalize] / conf_pressures[i]
         # normalize selected columns by the maximum value of the whole selected data
-        for j in colsToMaxNormalize:
-            data_arrays_normalized[i][:, j] = data_arrays[i][:, j] / maxColValues[j, 0]
+        for j in cols_to_max_normalize:
+            data_arrays_normalized[i][:, j] = data_arrays[i][:, j] / max_col_values[j, 0]
 
     return data_arrays_normalized
 
 
-def RNN_inputs(data_arrays, features, targets, length):
+def rnn_inputs(data_arrays, features, targets, length):
     """
     make data for RNN inputs and a few other useful variables in `dict` format.
     :param data_arrays: a list of normalized 2-D shaped array-like data (shape=(data_points, columns))
@@ -112,10 +112,10 @@ def RNN_inputs(data_arrays, features, targets, length):
     # containers
     x_arrays = []
     y_arrays = []
-    dataPoints_list = []
+    data_points_list = []
 
-    Xs_rnn = []
-    Ys_rnn = []
+    x_rnns = []
+    y_rnns = []
 
     # number of data_arrays
     num_data_arrays = len(data_arrays)
@@ -129,35 +129,35 @@ def RNN_inputs(data_arrays, features, targets, length):
         y_arrays.append(y_array)
 
         # make inputs for RNN layers (time window method)
-        dataPoints = len(x_array)  # get num of the data points for data_array[i]
-        dataPoints_list.append(dataPoints)  # save dataPoints for data_array[i]
+        data_points = len(x_array)  # get num of the data points for data_array[i]
+        data_points_list.append(data_points)  # save dataPoints for data_array[i]
 
-        x_rnn = list()  # container for x_rnn
-        y_rnn = list()  # container for y_rnn
+        x_rnn_concat = list()  # container for x_rnn
+        y_rnn_concat = list()  # container for y_rnn
 
-        for j in range(dataPoints - length):  # grab samples from j to j + length
+        for j in range(data_points - length):  # grab samples from j to j + length
             sample_train = x_array[j:j+length, :]
             outcome_train = y_array[j+length, 0]
-            x_rnn.append(sample_train)
-            y_rnn.append(outcome_train)
+            x_rnn_concat.append(sample_train)
+            y_rnn_concat.append(outcome_train)
 
-        x_rnn = np.asarray(x_rnn)
-        y_rnn = np.asarray(y_rnn)
-        Xs_rnn.append(x_rnn)
-        Ys_rnn.append(y_rnn)
+        x_rnn_concat = np.asarray(x_rnn_concat)
+        y_rnn_concat = np.asarray(y_rnn_concat)
+        x_rnns.append(x_rnn_concat)
+        y_rnns.append(y_rnn_concat)
 
-    x_rnn = np.concatenate(Xs_rnn, axis=0)
-    y_rnn = np.concatenate(Ys_rnn, axis=0)
+    x_rnn_concat = np.concatenate(x_rnns, axis=0)
+    y_rnn_concat = np.concatenate(y_rnns, axis=0)
 
-    dataDict = {
+    data_dict = {
         "x_arrays": x_arrays,  # a list of data to be used as features
         "y_arrays": y_arrays,  # a list of data to be used as a target
-        "dataPoints_list": dataPoints_list,  # number of datapoint for each trial
-        "x_rnn": x_rnn,  # x_rnn (concatenated)
-        "y_rnn": y_rnn,  # y_rnn (concatenated)
-        "Xs_rnn": Xs_rnn,  # x_rnn before concatenating
-        "Ys_rnn": Ys_rnn  # y_rnn before concatenating
+        "data_points_list": data_points_list,  # number of datapoint for each trial
+        "x_rnn_concat": x_rnn_concat,  # x_rnn (concatenated)
+        "y_rnn_concat": y_rnn_concat,  # y_rnn (concatenated)
+        "x_rnns": x_rnns,  # x_rnn before concatenating
+        "y_rnns": y_rnns  # y_rnn before concatenating
     }
 
-    return dataDict
+    return data_dict
 

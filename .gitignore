@@ -3,6 +3,8 @@
 *.pyc
 *.idea
 *.ipynb
+test.py
 __pycache__/
+rawdata/
 notebook_colab.ipynb
 notebook_frontera.ipynb

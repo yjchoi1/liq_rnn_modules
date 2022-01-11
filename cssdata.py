@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 # import from my modules
-from dataimportingfunctions import get_data_dirlist
+from dataimportingfunctions import get_data_dir_list
 
 
 def data_dir():
@@ -16,7 +16,7 @@ def data_dir():
     return data_dir
 
 
-def expNumList():
+def exp_num_list():
     """"
     define experiment numbers that you want to include from the whole data
     """
@@ -25,7 +25,7 @@ def expNumList():
     return expNumList
 
 
-def relativeDensity():
+def relative_density():
     """
     define relative densities for each experiment and trials
     """
@@ -45,16 +45,16 @@ def relativeDensity():
     return Drs
 
 
-def to_dataframe(data_dir, expNumList=expNumList(), Drs=relativeDensity()):
+def to_dataframe(data_dir, exp_num_list=exp_num_list(), Drs=relative_density()):
     """make a list to contain dataframe for the whole data"""
 
     df_all = []  # make an empty list to contain dataframes
 
     # get the number of trials for each experiment
-    for exp in expNumList:
-        dataDirList = get_data_dirlist(exp, basedir=data_dir)  # get dir list of trial files in each exp
-        num_exps = len(expNumList)  # get num of experiments
-        num_trials = len(dataDirList)  # get num of trials in each exp
+    for exp in exp_num_list:
+        data_dir_list = get_data_dir_list(exp, basedir=data_dir)  # get dir list of trial files in each exp
+        num_exps = len(exp_num_list)  # get num of experiments
+        num_trials = len(data_dir_list)  # get num of trials in each exp
 
         # make a list to contain a dataframe for each trial in the exp
         df_trial = []
@@ -63,8 +63,8 @@ def to_dataframe(data_dir, expNumList=expNumList(), Drs=relativeDensity()):
         for trial in range(num_trials):
 
             # make a dataframe for each trial
-            dataDir = dataDirList[trial]  # get directory of each `trial.csv`
-            df_single = pd.read_csv(dataDir, header=5)  # make `.csv` to pandas `df`
+            data_dir_trial = data_dir_list[trial]  # get directory of each `trial.csv`
+            df_single = pd.read_csv(data_dir_trial, header=5)  # make `.csv` to pandas `df`
 
             # insert Dr values at the first column of the dataframe
             df_single.insert(0, "Dr [%]", Drs[exp-7][trial])
@@ -84,7 +84,7 @@ def to_dataframe(data_dir, expNumList=expNumList(), Drs=relativeDensity()):
     return df_all
 
 
-def plotTrial(dataframe, expIndex, trialIndex):
+def plot_trial(dataframe, expIndex, trialIndex):
     """plot all the columns in the dataframe at expIndex and trialIndex"""
 
     dataColNames = dataframe[expIndex][trialIndex].columns  # get data column names
@@ -98,7 +98,7 @@ def plotTrial(dataframe, expIndex, trialIndex):
         axi.set(ylabel=dataColNames[i])
 
 
-def LookIntoData(dataframe, timeIndex, expNumList=expNumList()):
+def look_into_data(dataframe, timeIndex, expNumList=exp_num_list()):
     """
     Some of data has a irregular time interval and different data points.
     This function look into those.
