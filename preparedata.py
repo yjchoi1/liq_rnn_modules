@@ -132,19 +132,19 @@ def rnn_inputs(data_arrays, features, targets, length):
         data_points = len(x_array)  # get num of the data points for data_array[i]
         data_points_list.append(data_points)  # save dataPoints for data_array[i]
 
-        x_rnn_concat = list()  # container for x_rnn
-        y_rnn_concat = list()  # container for y_rnn
+        x_rnn = list()  # container for x_rnn
+        y_rnn = list()  # container for y_rnn
 
         for j in range(data_points - length):  # grab samples from j to j + length
             sample_train = x_array[j:j+length, :]
             outcome_train = y_array[j+length, 0]
-            x_rnn_concat.append(sample_train)
-            y_rnn_concat.append(outcome_train)
+            x_rnn.append(sample_train)
+            y_rnn.append(outcome_train)
 
-        x_rnn_concat = np.asarray(x_rnn_concat)
-        y_rnn_concat = np.asarray(y_rnn_concat)
-        x_rnns.append(x_rnn_concat)
-        y_rnns.append(y_rnn_concat)
+        x_rnn = np.asarray(x_rnn)
+        y_rnn = np.asarray(y_rnn)
+        x_rnns.append(x_rnn)
+        y_rnns.append(y_rnn)
 
     x_rnn_concat = np.concatenate(x_rnns, axis=0)
     y_rnn_concat = np.concatenate(y_rnns, axis=0)
@@ -153,8 +153,8 @@ def rnn_inputs(data_arrays, features, targets, length):
         "x_arrays": x_arrays,  # a list of data to be used as features
         "y_arrays": y_arrays,  # a list of data to be used as a target
         "data_points_list": data_points_list,  # number of datapoint for each trial
-        "x_rnn_concat": x_rnn_concat,  # x_rnn (concatenated)
-        "y_rnn_concat": y_rnn_concat,  # y_rnn (concatenated)
+        "x_rnn_concat": x_rnn_concat,  # x_rnn concatenated for feeding model
+        "y_rnn_concat": y_rnn_concat,  # y_rnn concatenated for feeding model
         "x_rnns": x_rnns,  # x_rnn before concatenating
         "y_rnns": y_rnns  # y_rnn before concatenating
     }

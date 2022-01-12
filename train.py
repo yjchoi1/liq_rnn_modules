@@ -180,8 +180,8 @@ plotresult.plot_dataset(
 # %% plot prediction
 
 # get target (true) Y data
-Ys_rnn_train = data_dict_train['Ys_rnn']
-Ys_rnn_test = data_dict_test['Ys_rnn']
+Ys_rnn_train = data_dict_train['y_rnns']
+Ys_rnn_test = data_dict_test['y_rnns']
 
 # plot prediction result for train sets
 plotresult.plot_predictionResult_v2(Ys_rnn=Ys_rnn_train, Ys_rnn_pred=Ys_rnn_train_pred,
